@@ -404,28 +404,264 @@ This separation is critical.
 
 ---
 
-# 🎯 You Now Have
 
-* Clean layered architecture
-* Production-ready MCP pattern
-* Extensible tool system
-* Secure execution model
-* Looping agent support
 
-You are no longer building chatbots.
-You are building agent infrastructure.
+
+
+# 🚀 Production MCP Agent
+
+A production-grade Model Context Protocol (MCP) agent built with:
+
+* FastAPI
+* Groq LLM
+* Tool registry system
+* Modular architecture
+* Secure tool execution
 
 ---
 
-# 🚀 Next Level Options
+# 🏗 Architecture Overview
 
-We can now:
+```
+Client
+  ↓
+FastAPI (API Layer)
+  ↓
+MCP Orchestrator (Reason → Act Loop)
+  ↓
+LLM (Groq)
+  ↓
+Tool Registry
+  ↓
+Tool Execution (Calculator, etc.)
+```
 
-1️⃣ Convert tool layer into separate microservice
-2️⃣ Add structured JSON logging
-3️⃣ Add distributed tracing
-4️⃣ Add memory (vector store)
-5️⃣ Add Claude-style sampling
-6️⃣ Add authentication + rate limiting
+The LLM decides which tool to call.
+The backend safely executes the tool.
+The result is returned to the LLM for final response.
 
-Tell me what direction you want to take.
+---
+
+# 📁 Project Structure
+
+```
+my_mcp/
+│
+├── main.py
+├── .env
+│
+├── mcp/
+│   ├── __init__.py
+│   ├── orchestrator.py
+│   ├── registry.py
+│   └── interfaces.py
+│
+├── llm/
+│   ├── __init__.py
+│   └── client.py
+│
+├── tools/
+│   ├── __init__.py
+│   └── calculator.py
+│
+└── .venv/
+```
+
+---
+
+# 🧰 Prerequisites
+
+* macOS / Linux
+* Python 3.12+
+* uv installed
+* Groq API key
+
+---
+
+# ⚙️ Setup Instructions
+
+## 1️⃣ Create Virtual Environment
+
+```bash
+uv venv
+source .venv/bin/activate
+```
+
+---
+
+## 2️⃣ Install Dependencies
+
+```bash
+uv pip install fastapi uvicorn groq python-dotenv
+```
+
+---
+
+## 3️⃣ Configure Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+GROQ_API_KEY=gsk-xxxxxxxxxxxxxxxx
+```
+
+⚠️ Add `.env` to `.gitignore`.
+
+---
+
+# ▶️ Running the Application
+
+## Start the server
+
+Make sure you are inside the project root:
+
+```bash
+cd my_mcp
+```
+
+Activate virtual environment:
+
+```bash
+source .venv/bin/activate
+```
+
+Run:
+
+```bash
+uvicorn main:app --reload
+```
+
+You should see:
+
+```
+Uvicorn running on http://127.0.0.1:8000
+```
+
+---
+
+# 🧪 Testing the API
+
+## Option 1 — Swagger UI (Recommended)
+
+Open in browser:
+
+```
+http://127.0.0.1:8000/docs
+```
+
+Test endpoint:
+
+```
+POST /chat
+```
+
+Example request:
+
+```json
+{
+  "message": "What is 25 * 4?"
+}
+```
+
+---
+
+## Option 2 — curl
+
+```bash
+curl -X POST "http://127.0.0.1:8000/chat" \
+-H "Content-Type: application/json" \
+-d '{"message": "What is 10 + 5?"}'
+```
+
+---
+
+# 🛠 Troubleshooting
+
+## ModuleNotFoundError
+
+Make sure:
+
+* You are running from project root
+* Each folder has `__init__.py`
+* Virtual environment is activated
+
+If needed:
+
+```bash
+export PYTHONPATH=$(pwd)
+```
+
+---
+
+## API Key Not Found
+
+Check:
+
+```bash
+cat .env
+```
+
+Verify:
+
+```
+GROQ_API_KEY=...
+```
+
+---
+
+## Port Already In Use
+
+```bash
+lsof -i :8000
+kill -9 <PID>
+```
+
+---
+
+# 🔐 Security Notes
+
+* Do NOT commit `.env`
+* Tool execution is sandboxed
+* Loop limit prevents infinite execution
+* No direct database access from LLM
+
+---
+
+# 🚀 Future Improvements
+
+* Add structured logging
+* Add async support
+* Extract tools into microservices
+* Add authentication
+* Add distributed tracing
+* Dockerize for production
+
+---
+
+# 🧠 How It Works
+
+1. User sends request
+2. Orchestrator sends message + tool schemas to LLM
+3. LLM decides whether to call tool
+4. Backend executes tool safely
+5. Result returned to LLM
+6. Final formatted response returned to user
+
+---
+
+# 📌 Example Tool Flow
+
+User:
+
+```
+What is 25 * 4?
+```
+
+Flow:
+
+```
+LLM → Calls calculator tool
+Backend → Executes calculator
+LLM → Formats final answer
+User → Receives response
+```
