@@ -37,17 +37,58 @@ class MCPOrchestrator:
 
         # Start the conversation with a system prompt and the user's message
         messages = [
-            {"role": "system", "content": "You are an AI agent."},
-            {"role": "user", "content": user_input},
-        ]
+    {
+        "role": "system",
+        "content": """
+      You are a secure banking assistant.
+
+You have access to tools that allow you to perform banking operations. When a user asks about their account balance or requests banking information, you MUST use the appropriate tool to retrieve this information.
+
+Available tools are provided to you - use them when they match the user's request:
+- If a user asks about their account balance, use the get_balance tool with their account_id
+- If a user needs calculations, use the calculator tool
+
+You can ONLY call tools that are explicitly provided.
+You must NEVER invent new tool names.
+You must NEVER attempt direct database access.
+If no tool matches the user's request, respond with a normal answer explaining what you can help with.
+        """
+    },
+    {"role": "user", "content": user_input}
+]
+
+
 
         # Loop up to N times to avoid infinite tool-calling cycles
         for _ in range(5):  # safety loop limit
             # Ask the LLM what to do next, passing available tool schemas
-            response = self.llm.chat(
-                messages,
-                tools=self.registry.get_schemas(),
-            )
+            tool_schemas = self.registry.get_schemas()
+            # Log tool schemas for debugging
+            if tool_schemas:
+                logger.info(f"Passing {len(tool_schemas)} tools to LLM: {[s.get('function', {}).get('name', 'unknown') for s in tool_schemas]}")
+                # Log full schema for first tool to debug format issues
+                if len(tool_schemas) > 0:
+                    logger.debug(f"First tool schema: {tool_schemas[0]}")
+            else:
+                logger.warning("No tools available in registry!")
+            
+            try:
+                # Ensure we're passing tools correctly - Groq expects a list or None
+                tools_to_send = tool_schemas if tool_schemas else None
+                logger.info(f"Sending request with {len(tool_schemas) if tool_schemas else 0} tools")
+                
+                response = self.llm.chat(
+                    messages,
+                    tools=tools_to_send,
+                )
+            except Exception as e:
+                logger.error(f"LLM API call failed: {e}")
+                logger.error(f"Tools being sent: {tool_schemas}")
+                logger.error(f"Tool count: {len(tool_schemas) if tool_schemas else 0}")
+                if tool_schemas:
+                    for i, schema in enumerate(tool_schemas):
+                        logger.error(f"Tool {i}: {schema}")
+                raise
 
             # The LLM's latest assistant message (may or may not include tool calls)
             message = response.choices[0].message

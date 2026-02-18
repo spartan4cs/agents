@@ -2,14 +2,36 @@ from fastapi import FastAPI  # Web framework for building the HTTP API
 from pydantic import BaseModel  # For request/response data validation
 from mcp.registry import ToolRegistry  # Holds all available tools
 from mcp.orchestrator import MCPOrchestrator  # Orchestrates tool calls based on input
+from tools.balance import BalanceTool
 from tools.calculator import CalculatorTool  # Example tool implementation
+
+
 
 # Create the FastAPI application instance
 app = FastAPI()
 
 # Create a registry and register all tools the MCP server can use
 registry = ToolRegistry()
-registry.register(CalculatorTool())  # Add the calculator tool to the registry
+
+# Register tools with error handling
+try:
+    calc_tool = CalculatorTool()
+    registry.register(calc_tool)
+    print(f"Registered tool: {calc_tool.name}")
+except Exception as e:
+    print(f"Error registering CalculatorTool: {e}")
+
+try:
+    balance_tool = BalanceTool()
+    registry.register(balance_tool)
+    print(f"Registered tool: {balance_tool.name}")
+except Exception as e:
+    print(f"Error registering BalanceTool: {e}")
+
+# Verify registration
+print(f"Total tools registered: {len(registry.get_schemas())}")
+for schema in registry.get_schemas():
+    print(f"  - {schema.get('function', {}).get('name', 'unknown')}")
 
 # Orchestrator decides which tool(s) to call for a given message
 orchestrator = MCPOrchestrator(registry)

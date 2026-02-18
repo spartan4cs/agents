@@ -14,6 +14,11 @@ class LLMClient:
         self.client = Groq(api_key=api_key)
 
     def chat(self, messages, tools=None):
+        # Groq expects tools to be a list or None
+        # If tools is an empty list, pass None instead
+        if tools is not None and len(tools) == 0:
+            tools = None
+        
         return self.client.chat.completions.create(
             model="llama-3.1-8b-instant",
             messages=messages,
